@@ -31,6 +31,10 @@ dependencies {
     androidTestCompile 'com.android.support.test:runner:0.4'
     androidTestCompile 'com.android.support.test:rules:0.4'
 
+    compile files("libs/cpakjava.jar");
+    compile files("libs/cpakjava.securestorageagent.jar");
+    compile files("libs/nmpsdk.jar");
+
     compile 'com.android.support:support-annotations:23.3.0'
 }
 

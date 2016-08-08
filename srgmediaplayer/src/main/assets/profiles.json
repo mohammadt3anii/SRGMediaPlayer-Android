@@ -1,0 +1,22 @@
+{
+  "DeviceProfiles": {
+    "Specific": [
+      {
+        "Manufacturer": "",
+        "Model": "",
+        "Product": "",
+        "Device": "",
+        "Board": "",
+        "Hardware": "",
+        "MaxBitRate": ""
+      }
+    ],
+    "Generic": [
+      {
+        "CpuCores": "1",
+        "CpuFreq": "600000",
+        "Neon": "0",
+        "MaxBitRate": "300000"
+      }
+    ]
+  }
