@@ -539,7 +539,12 @@ public class SRGMediaPlayerController implements PlayerDelegate.OnPlayerDelegate
                     }
                     if (currentMediaPlayerDelegate != null) {
                         if (mediaPlayerView != null) {
-                            internalUpdateMediaPlayerViewBound();
+                            mainHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                        internalUpdateMediaPlayerViewBound();
+                                    }
+                            });
                         }
                         currentMediaPlayerDelegate.playIfReady(playWhenReady);
                         if (seekToWhenReady != null) {
@@ -998,7 +1003,12 @@ public class SRGMediaPlayerController implements PlayerDelegate.OnPlayerDelegate
         }
 
         mediaPlayerView = newView;
-        internalUpdateMediaPlayerViewBound();
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                internalUpdateMediaPlayerViewBound();
+            }
+        });
         overlayController.bindToVideoContainer(this.mediaPlayerView);
         manageKeepScreenOnInternal();
     }
@@ -1089,6 +1099,11 @@ public class SRGMediaPlayerController implements PlayerDelegate.OnPlayerDelegate
                         @Override
                         public void onViewAttachedToWindow(View v) {
                             Log.v(TAG, renderingView + "binding, attached rendering view" + mediaPlayerView);
+                            try {
+                                bindDelegateToRenderingViewInUiThread();
+                            } catch (SRGMediaPlayerException e) {
+                                Log.d(TAG, "Error binding view", e);
+                            }
                         }
 
                         @Override
