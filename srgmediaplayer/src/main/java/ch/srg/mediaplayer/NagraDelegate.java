@@ -3,6 +3,9 @@ package ch.srg.mediaplayer;
 import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Looper;
+import android.support.annotation.MainThread;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
@@ -21,28 +24,38 @@ import nagra.nmp.sdk.NMPVideoView;
 /**
  * Created by seb on 08/08/16.
  */
-public class NagraDelegate implements PlayerDelegate, DRMHandlerResponse {
+public class NagraDelegate implements PlayerDelegate {
     private static final String TAG = "NagraDelegate";
     private static final String SERVER_URL = "http://ssolab1.nagra.com/srg/";
     public static final String SERVER_PRIVATE_DATA = "";
     private static final String SERVER_CLEAR_PRIVATE_DATA = "";
 
-    private static boolean initialized;
+    private static boolean initializationStarted;
     private static DRMHandler drmHandler;
+    @NonNull
     private final OnPlayerDelegateListener listener;
     @Nullable
     private NMPVideoView videoView;
     private Uri pendingPrepareUri;
     private boolean pendingStart;
 
-    public NagraDelegate(Context context, OnPlayerDelegateListener listener) {
+    private static NagraDelegate pendingDelegate;
+    private static boolean licenseInitialized;
+
+    public NagraDelegate(Context context, @NonNull OnPlayerDelegateListener listener) {
+        if (!initializationStarted) {
+            throw new IllegalStateException("Initialization must be called first");
+        }
         this.listener = listener;
-        initialization(context);
     }
 
-    public void initialization(Context applicationContext) {
-        if (!initialized) {
-            initialized = true;
+    @MainThread
+    public static void initialization(Context applicationContext) {
+        if (!initializationStarted) {
+            if (Looper.myLooper() != Looper.getMainLooper()) {
+                throw new IllegalStateException("Invalid thread");
+            }
+            initializationStarted = true;
             NMPSDK.load(applicationContext);
             DRMHandler.createInstance(new DRMHandlerListener() {
 
@@ -52,7 +65,32 @@ public class NagraDelegate implements PlayerDelegate, DRMHandlerResponse {
                     request.setServerUrl(SERVER_URL);
                     request.setClientPrivateData(SERVER_PRIVATE_DATA);
                     request.setClearPrivateData(SERVER_CLEAR_PRIVATE_DATA);
-                    DRMHandler.getInstance().acquireLicense(request, NagraDelegate.this);
+                    DRMHandler.getInstance().acquireLicense(request, new DRMHandlerResponse() {
+                        @Override
+                        public void setPrivateData(String privateData) {
+
+                        }
+
+                        @Override
+                        public void licenseAdded(DRMLicense license) {
+                            Log.v(TAG, "License added " + license);
+                        }
+
+                        @Override
+                        public void licenseRemoved(DRMLicense license) {
+
+                        }
+
+                        @Override
+                        public void finished() {
+
+                        }
+
+                        @Override
+                        public void finishedWithError(DRMHandlerError error) {
+
+                        }
+                    });
                 }
             }, new DRMHandlerDirectOperationDelegate(), applicationContext);
 
@@ -61,7 +99,34 @@ public class NagraDelegate implements PlayerDelegate, DRMHandlerResponse {
             request.setClientPrivateData(SERVER_PRIVATE_DATA);
             request.setClearPrivateData(SERVER_PRIVATE_DATA);
             Log.v(TAG, "DRM Initialize : " + request);
-            DRMHandler.getInstance().initialize(request, this);
+            DRMHandler.getInstance().initialize(request, new DRMHandlerResponse() {
+                @Override
+                public void setPrivateData(String privateData) {
+
+                }
+
+                @Override
+                public void licenseAdded(DRMLicense license) {
+
+                }
+
+                @Override
+                public void licenseRemoved(DRMLicense license) {
+
+                }
+
+                @Override
+                public void finished() {
+                    licenseInitialized = true;
+                    if (pendingDelegate != null) {
+                        pendingDelegate.startPendingIfReady();
+                    }
+                }
+
+                @Override
+                public void finishedWithError(DRMHandlerError error) {
+                }
+            });
         }
     }
 
@@ -101,16 +166,20 @@ public class NagraDelegate implements PlayerDelegate, DRMHandlerResponse {
             }
             Log.v(TAG, "not creating (pending: " + pendingPrepareUri + ") " + videoView);
         }
-        if (pendingPrepareUri != null) {
-            listener.onPlayerDelegatePreparing(this);
-            videoView.setVideoURI(pendingPrepareUri);
-            pendingPrepareUri = null;
-        }
+        startPendingIfReady();
         if (pendingStart) {
             videoView.start();
             pendingStart = false;
         }
         return videoView;
+    }
+
+    public void startPendingIfReady() {
+        if (pendingPrepareUri != null && videoView != null && licenseInitialized) {
+            listener.onPlayerDelegatePreparing(this);
+            videoView.setVideoURI(pendingPrepareUri);
+            pendingPrepareUri = null;
+        }
     }
 
     @Override
@@ -130,12 +199,9 @@ public class NagraDelegate implements PlayerDelegate, DRMHandlerResponse {
     @Override
     public void prepare(Uri videoUri) throws SRGMediaPlayerException {
         Log.v(TAG, "prepare " + videoUri + " " + videoView);
-        if (videoView != null) {
-            listener.onPlayerDelegatePreparing(this);
-            videoView.setVideoURI(videoUri);
-        } else {
-            pendingPrepareUri = videoUri;
-        }
+        pendingPrepareUri = videoUri;
+        pendingDelegate = this;
+        startPendingIfReady();
     }
 
     @Override
@@ -239,30 +305,5 @@ public class NagraDelegate implements PlayerDelegate, DRMHandlerResponse {
     @Override
     public long getPlaylistReferenceTime() {
         return 0;
-    }
-
-    @Override
-    public void setPrivateData(String privateData) {
-
-    }
-
-    @Override
-    public void licenseAdded(DRMLicense license) {
-        Log.v(TAG, "License added " + license);
-    }
-
-    @Override
-    public void licenseRemoved(DRMLicense license) {
-
-    }
-
-    @Override
-    public void finished() {
-        Log.v(TAG, "DRM Finished");
-    }
-
-    @Override
-    public void finishedWithError(DRMHandlerError error) {
-        listener.onPlayerDelegateError(NagraDelegate.this, new SRGMediaPlayerException(error.toString()));
     }
 }
