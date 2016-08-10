@@ -10,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import ch.srg.mediaplayer.nagra.pak.DRMHandler;
 import ch.srg.mediaplayer.nagra.pak.DRMHandlerDirectOperationDelegate;
@@ -50,7 +51,7 @@ public class NagraDelegate implements PlayerDelegate {
     }
 
     @MainThread
-    public static void initialization(Context applicationContext) {
+    public static void initialization(final Context applicationContext) {
         if (!initializationStarted) {
             if (Looper.myLooper() != Looper.getMainLooper()) {
                 throw new IllegalStateException("Invalid thread");
@@ -58,6 +59,7 @@ public class NagraDelegate implements PlayerDelegate {
             initializationStarted = true;
             NMPSDK.load(applicationContext);
             DRMHandler.createInstance(new DRMHandlerListener() {
+                private Toast toast;
 
                 @Override
                 public void licenseAcquisitionNeeded(DRMHandlerRequest request) {
@@ -65,7 +67,9 @@ public class NagraDelegate implements PlayerDelegate {
                     request.setServerUrl(SERVER_URL);
                     request.setClientPrivateData(SERVER_PRIVATE_DATA);
                     request.setClearPrivateData(SERVER_CLEAR_PRIVATE_DATA);
+                    showToast("LicenseRequest: " + request.getContentId());
                     DRMHandler.getInstance().acquireLicense(request, new DRMHandlerResponse() {
+
                         @Override
                         public void setPrivateData(String privateData) {
 
@@ -73,24 +77,30 @@ public class NagraDelegate implements PlayerDelegate {
 
                         @Override
                         public void licenseAdded(DRMLicense license) {
-                            Log.v(TAG, "License added " + license);
+                            showToast("LicenseAdded: " + license.getContentName());
                         }
 
                         @Override
                         public void licenseRemoved(DRMLicense license) {
-
+                            showToast("LicenseRemoved: " + license.getContentName());
                         }
 
                         @Override
                         public void finished() {
-
                         }
 
                         @Override
                         public void finishedWithError(DRMHandlerError error) {
-
                         }
                     });
+                }
+
+                public void showToast(String text) {
+                    if (toast != null) {
+                        toast.cancel();
+                    }
+                    toast = Toast.makeText(applicationContext, text, Toast.LENGTH_LONG);
+                    toast.show();
                 }
             }, new DRMHandlerDirectOperationDelegate(), applicationContext);
 
@@ -107,12 +117,10 @@ public class NagraDelegate implements PlayerDelegate {
 
                 @Override
                 public void licenseAdded(DRMLicense license) {
-
                 }
 
                 @Override
                 public void licenseRemoved(DRMLicense license) {
-
                 }
 
                 @Override
