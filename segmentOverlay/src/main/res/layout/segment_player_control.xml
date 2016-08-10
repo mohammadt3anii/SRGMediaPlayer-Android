@@ -76,4 +76,17 @@
         android:layout_height="@dimen/player_control_height"
         android:background="@drawable/ic_fullscreen" />
 
+
+    <ImageButton
+        android:id="@+id/multiaudio"
+        android:layout_width="@dimen/player_control_height"
+        android:layout_height="@dimen/player_control_height"
+        android:src="@drawable/ic_nmp_audiotrack" />
+
+    <ImageButton
+        android:id="@+id/languages"
+        android:layout_width="@dimen/player_control_height"
+        android:layout_height="@dimen/player_control_height"
+        android:src="@drawable/ic_nmp_subtitles" />
+
 </LinearLayout>

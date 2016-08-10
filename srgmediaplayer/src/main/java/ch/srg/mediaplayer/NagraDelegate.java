@@ -20,6 +20,7 @@ import ch.srg.mediaplayer.nagra.pak.DRMHandlerRequest;
 import ch.srg.mediaplayer.nagra.pak.DRMHandlerResponse;
 import ch.srg.mediaplayer.nagra.pak.DRMLicense;
 import nagra.nmp.sdk.NMPSDK;
+import nagra.nmp.sdk.NMPTrackInfo;
 import nagra.nmp.sdk.NMPVideoView;
 
 /**
@@ -313,5 +314,12 @@ public class NagraDelegate implements PlayerDelegate {
     @Override
     public long getPlaylistReferenceTime() {
         return 0;
+    }
+
+    public NMPTrackInfo[] getNMPTrackInfo(){
+        if (videoView != null){
+            return videoView.getNMPTrackInfo();
+        }
+        return null;
     }
 }
