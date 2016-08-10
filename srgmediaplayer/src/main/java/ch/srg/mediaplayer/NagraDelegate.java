@@ -322,4 +322,10 @@ public class NagraDelegate implements PlayerDelegate {
         }
         return null;
     }
+
+    public void selectTrack(int trackID) {
+        if (videoView != null){
+            videoView.selectTrack(trackID);
+        }
+    }
 }

@@ -1,16 +1,17 @@
 package ch.srg.segmentoverlay.view;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -41,6 +42,8 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
     public static final int FULLSCREEN_BUTTON_ON = 1;
     public static final int FULLSCREEN_BUTTON_OFF = 2;
 
+    private final Context context;
+
     @Nullable
     private SRGMediaPlayerController playerController;
 
@@ -54,7 +57,7 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
     private Button replayButton;
     private Button fullscreenButton;
     private ImageButton languageButton;
-    private ImageButton multiAudio;
+    private ImageButton multiAudioButton;
 
     private TextView leftTime;
     private TextView rightTime;
@@ -69,12 +72,12 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
     @Nullable
     private Listener listener;
 
-    private AlertDialog.Builder multiAudioDialogBuilder;
-    private AlertDialog.Builder subtitleTracksDialogBuilder;
-
     private int activeSubtitleTrackIndex = 0;
     private int activeAudioTrackIndex = 0;
     private NMPTrackInfo[] nmpTrackInfo;
+
+    private ArrayList<NMPTrackInfo> subtitles;
+    private ArrayList<NMPTrackInfo> audioTracks;
 
     public PlayerControlView(Context context) {
         this(context, null);
@@ -87,6 +90,8 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
     public PlayerControlView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
+        this.context = context;
+
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflater.inflate(R.layout.segment_player_control, this, true);
 
@@ -97,11 +102,25 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
         playButton = (Button) findViewById(R.id.segment_player_control_button_play);
         replayButton = (Button) findViewById(R.id.segment_player_control_button_replay);
         fullscreenButton = (Button) findViewById(R.id.segment_player_control_button_fullscreen);
-        multiAudio = (ImageButton) findViewById(R.id.multiaudio);
+        multiAudioButton = (ImageButton) findViewById(R.id.multiaudio);
         languageButton = (ImageButton) findViewById(R.id.languages);
 
-        multiAudio.setOnClickListener(mutliAudioListener);
-        languageButton.setOnClickListener(languagesListener);
+        multiAudioButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (audioTracks.size() > 0) {
+                    createMultiAudioDialog();
+                }
+            }
+        });
+        languageButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (subtitles.size() > 0) {
+                    createSubtitleTracksDialog();
+                }
+            }
+        });
 
         pauseButton.setOnClickListener(this);
         playButton.setOnClickListener(this);
@@ -225,9 +244,9 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
                 replayButton.setVisibility(View.VISIBLE);
             }
 
-            if (playerController.isPlaying() && playerController.getPlayerDelegate() instanceof NagraDelegate){
+            if (playerController.isPlaying() && playerController.getPlayerDelegate() instanceof NagraDelegate) {
                 NagraDelegate delegate = (NagraDelegate) playerController.getPlayerDelegate();
-                if (!Arrays.equals(nmpTrackInfo, delegate.getNMPTrackInfo())){
+                if (!Arrays.equals(nmpTrackInfo, delegate.getNMPTrackInfo())) {
                     nmpTrackInfo = delegate.getNMPTrackInfo();
                     setTracks(nmpTrackInfo);
                 }
@@ -239,14 +258,6 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
             pauseButton.setVisibility(GONE);
             replayButton.setVisibility(View.VISIBLE);
         }
-    }
-
-    private void updateSubtitlesTrackDisplay() {
-
-    }
-
-    private void updateAudioTrackDisplay() {
-
     }
 
     private void updateTimes(long position, long duration) {
@@ -300,7 +311,7 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
         void onFullscreenClick(boolean fullscreen);
     }
 
-    public void setListener(PlayerControlView.Listener listener){
+    public void setListener(PlayerControlView.Listener listener) {
         this.listener = listener;
     }
 
@@ -324,79 +335,84 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
         return 0;
     }
 
-    private void createMultiAudioDialog(final ArrayList<NMPTrackInfo> audioTracks) {
-        multiAudioDialogBuilder = new AlertDialog.Builder(getContext());
-        multiAudioDialogBuilder.setTitle("select text title");
+    private void createMultiAudioDialog() {
+        PopupMenu popupMenu = new PopupMenu(getContext(), multiAudioButton);
+        popupMenu.inflate(R.menu.empty_popup);
+        Menu menu = popupMenu.getMenu();
 
-        ArrayList<String> tracksArray = new ArrayList<>();
         for (int i = 0; i < audioTracks.size(); i++) {
             if (audioTracks.get(i).getActive()) {
                 NMPLog.d(TAG, "Active Audio Track : " + getTrackID(audioTracks.get(i)));
                 activeAudioTrackIndex = i;
             }
-            tracksArray.add(audioTracks.get(i).getLanguage());
+            menu.add(Menu.NONE, Menu.NONE, i, audioTracks.get(i).getLanguage())
+                    .setCheckable(true)
+                    .setChecked(activeAudioTrackIndex == i);
         }
-        String[] textArray = tracksArray.toArray(new String[tracksArray.size()]);
 
-        multiAudioDialogBuilder.setSingleChoiceItems(textArray,
-                activeAudioTrackIndex,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int xWhich) {
-                        if (xWhich == activeAudioTrackIndex) {
-                            //do nothing, if user select the same track again.
-                        } else {
-                            NMPTrackInfo selectedTrack = audioTracks.get(xWhich);
-                            NMPLog.d(TAG, "Select Audio Track : " + getTrackID(selectedTrack));
-                            //mPlayer.selectTrack(getTrackID(selectedTrack));
-                        }
-                        dialog.cancel();
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                int index = item.getOrder();
+                if (index == activeAudioTrackIndex) {
+                    //do nothing, if user select the same track again.
+                } else {
+                    NMPTrackInfo selectedTrack = audioTracks.get(index);
+                    NMPLog.d(TAG, "Select Audio Track : " + getTrackID(selectedTrack));
+                    if (playerController != null) {
+                        ((NagraDelegate) playerController.getPlayerDelegate()).selectTrack(getTrackID(selectedTrack));
+                        activeAudioTrackIndex = index;
                     }
-                });
+                }
+                return true;
+            }
+        });
+
+        popupMenu.show();
     }
 
-    private void createSubtitleTracksDialog(final ArrayList<NMPTrackInfo> subtitles) {
-        subtitleTracksDialogBuilder = new AlertDialog.Builder(getContext());
-        subtitleTracksDialogBuilder.setTitle("select text title");
+    private void createSubtitleTracksDialog() {
+        PopupMenu popupMenu = new PopupMenu(getContext(), multiAudioButton);
+        popupMenu.inflate(R.menu.empty_popup);
+        Menu menu = popupMenu.getMenu();
         activeSubtitleTrackIndex = 0;
 
-        ArrayList<String> subtitleArray = new ArrayList<>();
-        subtitleArray.add("disable webvtt");
         for (int i = 0; i < subtitles.size(); i++) {
             if (subtitles.get(i).getActive()) {
                 NMPLog.d(TAG, "Active Subtitle Track : " + getTrackID(subtitles.get(i)));
-                activeSubtitleTrackIndex = i + 1;
+                activeSubtitleTrackIndex = i;
             }
-            subtitleArray.add(subtitles.get(i).getLanguage());
+            menu.add(Menu.NONE, Menu.NONE, i, subtitles.get(i).getLanguage())
+                    .setCheckable(true)
+                    .setChecked(activeAudioTrackIndex == i);
         }
-        String[] textArray = subtitleArray.toArray(new String[subtitleArray.size()]);
 
-        subtitleTracksDialogBuilder.setSingleChoiceItems(textArray,
-                activeSubtitleTrackIndex,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int xWhich) {
-                        if (xWhich == activeSubtitleTrackIndex) {
-                            //do nothing, if user select the same track again.
-                        } else if (xWhich == 0) {
-                            NMPTrackInfo selectedTrack = subtitles.get(activeSubtitleTrackIndex - 1);
-                            NMPLog.d(TAG, "Deselect Subtitle Track : " + getTrackID(selectedTrack));
-                            //mPlayer.deselectTrack(getTrackID(selectedTrack));
-                        } else {
-                            NMPTrackInfo selectedTrack = subtitles.get(xWhich - 1);
-                            NMPLog.d(TAG, "Select Subtitle Track : " + getTrackID(selectedTrack));
-                            //mPlayer.selectTrack(getTrackID(selectedTrack));
-                        }
-                        dialog.cancel();
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                int index = item.getOrder();
+                if (index == activeSubtitleTrackIndex) {
+                    //do nothing, if user select the same track again.
+                } else {
+                    NMPTrackInfo selectedTrack = subtitles.get(index);
+                    NMPLog.d(TAG, "Select Audio Track : " + getTrackID(selectedTrack));
+                    if (playerController != null) {
+                        ((NagraDelegate) playerController.getPlayerDelegate()).selectTrack(getTrackID(selectedTrack));
+                        activeSubtitleTrackIndex = index;
                     }
-                });
+                }
+                return true;
+            }
+        });
+
+        popupMenu.show();
     }
 
     public void setTracks(NMPTrackInfo[] tracks) {
         languageButton.setVisibility(View.GONE);
-        multiAudio.setVisibility(View.GONE);
-        ArrayList<NMPTrackInfo> mSubtitleItems = new ArrayList<>();
-        ArrayList<NMPTrackInfo> mMultiAudioItems = new ArrayList<>();
+        multiAudioButton.setVisibility(View.GONE);
+        subtitles = new ArrayList<>();
+        audioTracks = new ArrayList<>();
 
         for (int i = 0; i < tracks.length; i++) {
             NMPTrackInfo track = tracks[i];
@@ -404,38 +420,21 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
                 case NMPTrackInfo.MEDIA_TRACK_TYPE_TIMEDTEXT:
                     NMPLog.i(TAG,
                             "TrackID : " + i + " | MEDIA_TRACK_TYPE_TIMEDTEXT | Lang : " + track.getLanguage());
-                    mSubtitleItems.add(track);
+                    subtitles.add(track);
                     break;
                 case NMPTrackInfo.MEDIA_TRACK_TYPE_AUDIO:
                     NMPLog.i(TAG,
                             "TrackID : " + i + " | MEDIA_TRACK_TYPE_AUDIO | Lang : " + track.getLanguage());
-                    mMultiAudioItems.add(track);
+                    audioTracks.add(track);
                     break;
                 default:
                     break;
             }
         }
-        if (mSubtitleItems.size() > 0) {
-            languageButton.setVisibility(View.VISIBLE);
-            createSubtitleTracksDialog(mSubtitleItems);
-        }
-        if (mMultiAudioItems.size() > 1) {
-            multiAudio.setVisibility(View.VISIBLE);
-            createMultiAudioDialog(mMultiAudioItems);
-        }
+
+        languageButton.setVisibility(subtitles.size() > 0 ? View.VISIBLE : View.GONE);
+        multiAudioButton.setVisibility(audioTracks.size() > 0 ? View.VISIBLE : View.GONE);
+
     }
 
-    private View.OnClickListener mutliAudioListener = new View.OnClickListener() {
-        public void onClick(View v) {
-            AlertDialog dialog = multiAudioDialogBuilder.create();
-            dialog.show();
-        }
-    };
-
-    private View.OnClickListener languagesListener = new View.OnClickListener() {
-        public void onClick(View v) {
-            AlertDialog dialog = subtitleTracksDialogBuilder.create();
-            dialog.show();
-        }
-    };
 }
