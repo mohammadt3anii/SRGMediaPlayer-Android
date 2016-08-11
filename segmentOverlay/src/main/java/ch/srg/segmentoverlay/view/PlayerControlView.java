@@ -56,8 +56,6 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
     private Button playButton;
     private Button replayButton;
     private Button fullscreenButton;
-    private ImageButton languageButton;
-    private ImageButton multiAudioButton;
 
     private TextView leftTime;
     private TextView rightTime;
@@ -72,6 +70,8 @@ public class PlayerControlView extends RelativeLayout implements View.OnClickLis
     @Nullable
     private Listener listener;
 
+    private ImageButton languageButton;
+    private ImageButton multiAudioButton;
     private int activeSubtitleTrackIndex = 0;
     private int activeAudioTrackIndex = 0;
     private NMPTrackInfo[] nmpTrackInfo;

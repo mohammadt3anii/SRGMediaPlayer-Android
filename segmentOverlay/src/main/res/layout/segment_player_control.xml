@@ -76,7 +76,6 @@
         android:layout_height="@dimen/player_control_height"
         android:background="@drawable/ic_fullscreen" />
 
-
     <ImageButton
         android:id="@+id/multiaudio"
         android:layout_width="@dimen/player_control_height"
