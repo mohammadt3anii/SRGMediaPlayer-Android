@@ -252,7 +252,10 @@ public class NagraDelegate implements PlayerDelegate {
 
     @Override
     public long getDuration() {
-        return videoView != null ? videoView.getDuration() : 0;
+        return videoView != null ?
+                (videoView.getSeekableRangeInfo() != null && videoView.getDuration() == -1 ?
+                        videoView.getSeekableRangeInfo()[1] - videoView.getSeekableRangeInfo()[0] :
+                        videoView.getDuration()) : 0;
     }
 
     @Override
@@ -327,5 +330,9 @@ public class NagraDelegate implements PlayerDelegate {
         if (videoView != null){
             videoView.selectTrack(trackID);
         }
+    }
+
+    public long getLivePosition() {
+        return videoView != null && videoView.getSeekableRangeInfo() != null ? videoView.getSeekableRangeInfo()[1] : 0;
     }
 }
