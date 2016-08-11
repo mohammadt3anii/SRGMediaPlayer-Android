@@ -64,7 +64,7 @@ public class NagraDelegate implements PlayerDelegate {
 
                 @Override
                 public void licenseAcquisitionNeeded(DRMHandlerRequest request) {
-                    Log.v(TAG, "License acquisition: " + request);
+                    Log.v(TAG, "DRM License acquisition");
                     request.setServerUrl(SERVER_URL);
                     request.setClientPrivateData(SERVER_PRIVATE_DATA);
                     request.setClearPrivateData(SERVER_CLEAR_PRIVATE_DATA);
@@ -78,12 +78,12 @@ public class NagraDelegate implements PlayerDelegate {
 
                         @Override
                         public void licenseAdded(DRMLicense license) {
-                            showToast("LicenseAdded: " + license.getContentName());
+                            showToast("DRM License received");
                         }
 
                         @Override
                         public void licenseRemoved(DRMLicense license) {
-                            showToast("LicenseRemoved: " + license.getContentName());
+                            showToast("DRM License removed: " + license.getContentName());
                         }
 
                         @Override
