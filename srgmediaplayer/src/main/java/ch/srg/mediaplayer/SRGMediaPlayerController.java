@@ -53,6 +53,7 @@ public class SRGMediaPlayerController implements PlayerDelegate.OnPlayerDelegate
     private boolean mutedBecauseFocusLoss;
     private Long qualityOverride;
     private Long qualityDefault;
+    private boolean currentlyPlaying;
 
     public static String getName() {
         return NAME;
@@ -82,6 +83,7 @@ public class SRGMediaPlayerController implements PlayerDelegate.OnPlayerDelegate
     private static final int MSG_REGISTER_EVENT_LISTENER = 13;
     private static final int MSG_UNREGISTER_EVENT_LISTENER = 14;
     private static final int MSG_SWAP_PLAYER_DELEGATE = 15;
+    private static final int MSG_PLAYING_STATE_CHANGED = 16;
     private static final int MSG_PLAYER_DELEGATE_PREPARING = 101;
     private static final int MSG_PLAYER_DELEGATE_READY = 102;
     private static final int MSG_PLAYER_DELEGATE_BUFFERING = 103;
@@ -659,6 +661,7 @@ public class SRGMediaPlayerController implements PlayerDelegate.OnPlayerDelegate
                 postEventInternal(Event.Type.MEDIA_COMPLETED);
                 releaseInternal();
                 return true;
+            case MSG_PLAYING_STATE_CHANGED:
             case MSG_PLAYER_DELEGATE_PLAY_WHEN_READY_COMMITED:
                 postEventInternal(Event.Type.PLAYING_STATE_CHANGE);
                 return true;
@@ -691,6 +694,11 @@ public class SRGMediaPlayerController implements PlayerDelegate.OnPlayerDelegate
                     currentSeekTarget = null;
                     postEventInternal(Event.Type.DID_SEEK);
                 }
+            }
+            boolean playing = isPlaying();
+            if (currentlyPlaying != playing) {
+                currentlyPlaying = playing;
+                sendMessage(MSG_PLAYING_STATE_CHANGED);
             }
         }
     }
