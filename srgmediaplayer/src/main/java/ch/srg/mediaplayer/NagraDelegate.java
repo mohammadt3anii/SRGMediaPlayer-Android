@@ -177,7 +177,9 @@ public class NagraDelegate implements PlayerDelegate {
         }
         startPendingIfReady();
         if (pendingStart) {
+            Log.v(TAG, "Starting videoView");
             videoView.start();
+            listener.onPlayerDelegatePlayWhenReadyCommited(this);
             pendingStart = false;
         }
         return videoView;
@@ -185,6 +187,7 @@ public class NagraDelegate implements PlayerDelegate {
 
     public void startPendingIfReady() {
         if (pendingPrepareUri != null && videoView != null && licenseInitialized) {
+            Log.v(TAG, "setVideoURI " + pendingPrepareUri);
             listener.onPlayerDelegatePreparing(this);
             videoView.setVideoURI(pendingPrepareUri);
             pendingPrepareUri = null;
@@ -218,11 +221,14 @@ public class NagraDelegate implements PlayerDelegate {
         Log.v(TAG, "playIfReady " + playIfReady + " " + videoView);
         if (videoView != null) {
             if (playIfReady) {
+                Log.v(TAG, "Starting videoView");
                 videoView.start();
+                listener.onPlayerDelegatePlayWhenReadyCommited(this);
             } else {
                 videoView.stopPlayback();
-                pendingStart = false;
+                listener.onPlayerDelegatePlayWhenReadyCommited(this);
             }
+            pendingStart = false;
         } else {
             pendingStart = playIfReady;
         }
