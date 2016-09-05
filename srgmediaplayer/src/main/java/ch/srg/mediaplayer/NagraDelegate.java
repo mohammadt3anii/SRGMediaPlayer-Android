@@ -338,6 +338,12 @@ public class NagraDelegate implements PlayerDelegate {
         }
     }
 
+    public void deselectTrack(int trackID) {
+        if (videoView != null) {
+            videoView.deselectTrack(trackID);
+        }
+    }
+
     public long getLivePosition() {
         return videoView != null && videoView.getSeekableRangeInfo() != null ? videoView.getSeekableRangeInfo()[1] : 0;
     }
