@@ -39,6 +39,8 @@ public class PlayerControlView extends LinearLayout implements View.OnClickListe
     private Button pauseButton;
     private Button playButton;
     private Button replayButton;
+    private Button rewindButton;
+    private Button forwardButton;
     private Button fullscreenButton;
 
     private TextView leftTime;
@@ -77,10 +79,14 @@ public class PlayerControlView extends LinearLayout implements View.OnClickListe
         pauseButton = (Button) findViewById(R.id.segment_player_control_button_pause);
         playButton = (Button) findViewById(R.id.segment_player_control_button_play);
         replayButton = (Button) findViewById(R.id.segment_player_control_button_replay);
+        rewindButton = (Button) findViewById(R.id.segment_player_control_button_rewind);
+        forwardButton = (Button) findViewById(R.id.segment_player_control_button_forward);
         fullscreenButton = (Button) findViewById(R.id.segment_player_control_button_fullscreen);
 
         pauseButton.setOnClickListener(this);
         playButton.setOnClickListener(this);
+        rewindButton.setOnClickListener(this);
+        forwardButton.setOnClickListener(this);
         replayButton.setOnClickListener(this);
         fullscreenButton.setOnClickListener(this);
 
@@ -95,7 +101,7 @@ public class PlayerControlView extends LinearLayout implements View.OnClickListe
             if (fullScreenButtonState == FULLSCREEN_BUTTON_INVISIBLE) {
                 fullscreenButton.setVisibility(View.GONE);
             } else {
-                fullscreenButton.setVisibility(View.VISIBLE);
+                fullscreenButton.setVisibility(View.GONE);
                 if (fullScreenButtonState == FULLSCREEN_BUTTON_OFF) {
                     fullscreenButton.setBackgroundResource(R.drawable.ic_fullscreen_exit);
                 } else {
@@ -139,6 +145,10 @@ public class PlayerControlView extends LinearLayout implements View.OnClickListe
                 if (listener != null) {
                     listener.onFullscreenClick(fullScreenButtonState == FULLSCREEN_BUTTON_ON);
                 }
+            } else if (v == rewindButton) {
+                playerController.seekTo(playerController.getMediaPosition() - 30000);
+            } else if (v == forwardButton) {
+                playerController.seekTo(playerController.getMediaPosition() + 30000);
             }
         }
     }

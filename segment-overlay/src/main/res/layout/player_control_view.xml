@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" >
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
     <FrameLayout
-        android:layout_width="@dimen/player_control_height"
-        android:layout_height="@dimen/player_control_height">
+        android:id="@+id/segment_player_control_button_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true">
 
         <Button
             android:id="@+id/segment_player_control_button_play"
@@ -12,7 +16,7 @@
             android:layout_height="@dimen/player_control_height"
             android:background="@drawable/player_control_play"
             android:visibility="gone"
-            tools:visibility="visible" />
+            tools:visibility="visible"/>
 
         <Button
             android:id="@+id/segment_player_control_button_pause"
@@ -20,7 +24,7 @@
             android:layout_height="@dimen/player_control_height"
             android:background="@drawable/player_control_pause"
             android:visibility="gone"
-            tools:visibility="visible" />
+            tools:visibility="visible"/>
 
         <Button
             android:id="@+id/segment_player_control_button_replay"
@@ -28,25 +32,66 @@
             android:layout_height="@dimen/player_control_height"
             android:background="@drawable/player_control_replay"
             android:visibility="gone"
-            tools:visibility="visible" />
-
+            tools:visibility="visible"/>
     </FrameLayout>
+
+    <Button
+        android:id="@+id/segment_player_control_button_forward"
+        android:layout_width="@dimen/player_control_height"
+        android:layout_height="@dimen/player_control_height"
+        android:layout_centerInParent="true"
+        android:layout_toRightOf="@id/segment_player_control_button_frame"
+        android:background="@drawable/player_control_play"
+        tools:visibility="visible"/>
+
+    <Button
+        android:id="@+id/segment_player_control_button_rewind"
+        android:layout_width="@dimen/player_control_height"
+        android:layout_height="@dimen/player_control_height"
+        android:layout_centerInParent="true"
+        android:layout_toLeftOf="@id/segment_player_control_button_frame"
+        android:background="@drawable/player_control_play"
+        android:rotation="180"
+        tools:visibility="visible"/>
 
     <TextView
         android:id="@+id/segment_player_control_time_left"
         android:layout_width="@dimen/player_control_height"
         android:layout_height="@dimen/player_control_height"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
         android:gravity="center"
         android:text="@string/time_pending"
         android:textColor="#ffffff"
         android:textSize="10sp"
-        tools:ignore="SmallSp" />
+        tools:ignore="SmallSp"/>
+
+    <TextView
+        android:id="@+id/segment_player_control_time_right"
+        android:layout_width="@dimen/player_control_height"
+        android:layout_height="@dimen/player_control_height"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:gravity="center"
+        android:text="@string/time_pending"
+        android:textColor="#ffffff"
+        android:textSize="10sp"
+        tools:ignore="SmallSp"/>
+
+    <Button
+        android:id="@+id/segment_player_control_button_fullscreen"
+        android:layout_width="@dimen/player_control_height"
+        android:layout_height="@dimen/player_control_height"
+        android:background="@drawable/ic_fullscreen"
+        android:visibility="gone"/>
 
     <SeekBar
         android:id="@+id/segment_player_control_seekbar"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_width="@dimen/player_control_height"
+        android:layout_height="@dimen/player_control_height"
+        android:layout_alignParentBottom="true"
+        android:layout_toLeftOf="@id/segment_player_control_time_right"
+        android:layout_toRightOf="@id/segment_player_control_time_left"
         android:backgroundTintMode="src_in"
         android:progressBackgroundTintMode="src_in"
         android:progressTint="@color/white"
@@ -55,22 +100,6 @@
         android:secondaryProgressTintMode="src_in"
         android:thumbTint="@color/thumb"
         android:thumbTintMode="src_in"
-        tools:ignore="UnusedAttribute" />
+        tools:ignore="UnusedAttribute"/>
 
-    <TextView
-        android:id="@+id/segment_player_control_time_right"
-        android:layout_width="@dimen/player_control_height"
-        android:layout_height="@dimen/player_control_height"
-        android:gravity="center"
-        android:text="@string/time_pending"
-        android:textColor="#ffffff"
-        android:textSize="10sp"
-        tools:ignore="SmallSp" />
-
-    <Button
-        android:id="@+id/segment_player_control_button_fullscreen"
-        android:layout_width="@dimen/player_control_height"
-        android:layout_height="@dimen/player_control_height"
-        android:background="@drawable/ic_fullscreen" />
-
-</merge>
+</RelativeLayout>
