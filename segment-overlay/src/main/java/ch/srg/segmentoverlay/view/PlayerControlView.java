@@ -178,8 +178,6 @@ public class PlayerControlView extends LinearLayout implements View.OnClickListe
         }
     }
 
-
-    @Override
     public boolean onTouchEvent(MotionEvent event) {
         float seekBarX = seekBar.getX();
 
