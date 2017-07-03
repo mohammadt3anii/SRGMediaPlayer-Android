@@ -24,8 +24,12 @@ import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.audio.AudioCapabilities;
 import com.google.android.exoplayer2.audio.AudioCapabilitiesReceiver;
+import com.google.android.exoplayer2.drm.DefaultDrmSessionManager;
 import com.google.android.exoplayer2.drm.DrmSessionManager;
 import com.google.android.exoplayer2.drm.FrameworkMediaCrypto;
+import com.google.android.exoplayer2.drm.FrameworkMediaDrm;
+import com.google.android.exoplayer2.drm.HttpMediaDrmCallback;
+import com.google.android.exoplayer2.drm.UnsupportedDrmException;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -46,6 +50,7 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.upstream.FileDataSourceFactory;
+import com.google.android.exoplayer2.util.Util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +74,8 @@ public class ExoPlayerDelegate implements
         TextRenderer.Output {
 
     private static final DefaultBandwidthMeter BANDWIDTH_METER = new DefaultBandwidthMeter();
+    private static final String LICENCE_URL = "https://emeademo.dev.ott.irdeto.com/Widevine/getlicense?CrmId=SRG&AccountId=SRG&ContentId=irdetoLiveTest004";
+    private static final String USER_AGENT = "curl/Letterbox_2.0";
     private final EventLogger eventLogger;
     private final DefaultTrackSelector trackSelector;
     private final DefaultRenderersFactory renderersFactory;
@@ -120,6 +127,15 @@ public class ExoPlayerDelegate implements
                 new AdaptiveTrackSelection.Factory(BANDWIDTH_METER);
 
         DrmSessionManager<FrameworkMediaCrypto> drmSessionManager = null;
+        //DRM is only supported at API level 18+
+        if (Util.SDK_INT >= 18) {
+            try {
+                HttpMediaDrmCallback drmCallback = new HttpMediaDrmCallback(LICENCE_URL, new DefaultHttpDataSourceFactory(USER_AGENT));
+                drmSessionManager = new DefaultDrmSessionManager<>(C.WIDEVINE_UUID, FrameworkMediaDrm.newInstance(C.WIDEVINE_UUID), drmCallback, null, mainHandler, null);
+            } catch (UnsupportedDrmException e) {
+                e.printStackTrace();
+            }
+        }
 
         trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
         eventLogger = new EventLogger(trackSelector);
@@ -203,9 +219,7 @@ public class ExoPlayerDelegate implements
 
     @NonNull
     private DefaultDataSourceFactory getHttpDataSourceFactory() {
-        String userAgent = "curl/Letterbox_2.0"; // temporarily using curl/ user agent to force subtitles with Akamai beta
-
-        DefaultHttpDataSourceFactory httpDataSourceFactory = new DefaultHttpDataSourceFactory(userAgent, BANDWIDTH_METER);
+        DefaultHttpDataSourceFactory httpDataSourceFactory = new DefaultHttpDataSourceFactory(USER_AGENT, BANDWIDTH_METER);
         return new DefaultDataSourceFactory(context, BANDWIDTH_METER, httpDataSourceFactory);
     }
 
