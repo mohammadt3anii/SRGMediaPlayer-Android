@@ -1,11 +1,14 @@
 package ch.srg.mediaplayer.testutils.idling;
 
 import android.support.test.espresso.IdlingResource;
+import android.util.Log;
 
 /**
  * Created by npietri on 30.06.16.
  */
 public class ElapsedTimeIdlingResource implements IdlingResource {
+    private static final String TAG = "ElapsedTimeIdling";
+
     private final long startTime;
     private final long waitingTime;
     private ResourceCallback resourceCallback;
@@ -17,7 +20,7 @@ public class ElapsedTimeIdlingResource implements IdlingResource {
 
     @Override
     public String getName() {
-        return ElapsedTimeIdlingResource.class.getName() + ":" + waitingTime;
+        return ElapsedTimeIdlingResource.class.getName() + ":" + startTime +":" + waitingTime;
     }
 
     @Override
@@ -25,6 +28,7 @@ public class ElapsedTimeIdlingResource implements IdlingResource {
         long elapsed = System.currentTimeMillis() - startTime;
         boolean idle = (elapsed >= waitingTime);
         if (idle) {
+            Log.d(TAG, "waiting done, transition to idle.");
             resourceCallback.onTransitionToIdle();
         }
         return idle;

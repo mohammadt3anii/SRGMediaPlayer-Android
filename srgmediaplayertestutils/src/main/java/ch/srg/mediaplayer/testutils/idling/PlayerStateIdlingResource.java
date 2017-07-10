@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.test.espresso.IdlingResource;
 import android.text.TextUtils;
+import android.util.Log;
 
 import ch.srg.mediaplayer.SRGMediaPlayerController;
 
@@ -14,6 +15,7 @@ import ch.srg.mediaplayer.SRGMediaPlayerController;
  */
 
 public class PlayerStateIdlingResource implements IdlingResource, SRGMediaPlayerController.Listener {
+    private static final String TAG = "PlayerStateIdling";
 
     private final SRGMediaPlayerController.Event.Type eventToWait;
     private String urn;
@@ -53,6 +55,7 @@ public class PlayerStateIdlingResource implements IdlingResource, SRGMediaPlayer
         if (mp != null) {
             if (urn == null || TextUtils.equals(urn, mp.getMediaIdentifier())) {
                 if (eventToWait.equals(event.type)) {
+                    Log.d(TAG, "event received, transition to idle.");
                     SRGMediaPlayerController.unregisterGlobalEventListener(this);
                     idleNow = true;
                     if (callback != null) {
