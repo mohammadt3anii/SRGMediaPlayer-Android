@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.opengl.EGL14;
+import android.opengl.GLES20;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -16,6 +18,7 @@ import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
@@ -65,6 +68,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
+
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
+import javax.microedition.khronos.egl.EGLSurface;
 
 import ch.srg.mediaplayer.segment.model.Segment;
 
@@ -1357,8 +1366,10 @@ public class SRGMediaPlayerController implements Handler.Callback,
     private void unbindRenderingView() {
         if (renderingView instanceof SurfaceView) {
             exoPlayer.clearVideoSurfaceView((SurfaceView) renderingView);
+            clearSurface(((SurfaceView) renderingView).getHolder().getSurface());
         } else if (renderingView instanceof TextureView) {
             exoPlayer.clearVideoTextureView((TextureView) renderingView);
+            clearSurface(((TextureView) renderingView).getSurfaceTexture());
         }
         renderingView = null;
     }
@@ -1895,4 +1906,45 @@ public class SRGMediaPlayerController implements Handler.Callback,
         sendMessage(MSG_PLAYER_SUBTITLE_CUES, cues);
     }
 
+    private static void clearSurface(Object surface) {
+        try {
+            EGL10 egl = (EGL10) EGLContext.getEGL();
+            EGLDisplay display = egl.eglGetDisplay(EGL10.EGL_DEFAULT_DISPLAY);
+            egl.eglInitialize(display, null);
+
+            int[] attribList = {
+                    EGL10.EGL_RED_SIZE, 8,
+                    EGL10.EGL_GREEN_SIZE, 8,
+                    EGL10.EGL_BLUE_SIZE, 8,
+                    EGL10.EGL_ALPHA_SIZE, 8,
+                    EGL10.EGL_RENDERABLE_TYPE, EGL10.EGL_WINDOW_BIT,
+                    EGL10.EGL_NONE, 0,      // placeholder for recordable [@-3]
+                    EGL10.EGL_NONE
+            };
+            EGLConfig[] configs = new EGLConfig[1];
+            int[] numConfigs = new int[1];
+            egl.eglChooseConfig(display, attribList, configs, configs.length, numConfigs);
+            EGLConfig config = configs[0];
+            final int EGL14_EGL_CONTEXT_CLIENT_VERSION = 12440;
+            EGLContext context = egl.eglCreateContext(display, config, EGL10.EGL_NO_CONTEXT, new int[]{
+                    EGL14_EGL_CONTEXT_CLIENT_VERSION, 2,
+                    EGL10.EGL_NONE
+            });
+            EGLSurface eglSurface = egl.eglCreateWindowSurface(display, config, surface,
+                    new int[]{
+                            EGL10.EGL_NONE
+                    });
+
+            egl.eglMakeCurrent(display, eglSurface, eglSurface, context);
+            GLES20.glClearColor(0, 0, 0, 1);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+            egl.eglSwapBuffers(display, eglSurface);
+            egl.eglDestroySurface(display, eglSurface);
+            egl.eglMakeCurrent(display, EGL10.EGL_NO_SURFACE, EGL10.EGL_NO_SURFACE,
+                    EGL10.EGL_NO_CONTEXT);
+            egl.eglDestroyContext(display, context);
+            egl.eglTerminate(display);
+        } catch (Throwable ignored) {
+        }
+    }
 }
